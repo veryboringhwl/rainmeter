@@ -1,5 +1,7 @@
 ---@diagnostic disable: undefined-global
 
+-- i want to have all skins text centered x and y axis so easier to position
+
 function Initialize()
     MeterName = SELF:GetOption('TargetMeter')
 end
