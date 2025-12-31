@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global
 
--- i want to have all skins text centered x and y axis so easier to position
-
 function Initialize()
     MeterName = SELF:GetOption('TargetMeter')
 end
@@ -31,10 +29,10 @@ function Update()
         end
     end
 
-    local originalW = currentW - (pL + pR)
-    local originalH = currentH - (pT + pB)
+    local baseW = currentW - (pL + pR)
+    local baseH = currentH - (pT + pB)
 
-    if originalW <= 0 then return end
+    if baseW <= 0 or baseH <= 0 then return end
 
     local angleDeg = tonumber(SKIN:GetVariable('Angle')) or 0
     local targetPctX = tonumber(SELF:GetOption('PosX')) or 0.5
@@ -44,38 +42,43 @@ function Update()
     local cos = math.cos(rad)
     local sin = math.sin(rad)
 
-    local x1, y1 = 0, 0
-    local x2, y2 = (originalW * cos), (originalW * sin)
-    local x3, y3 = (originalW * cos) - (originalH * sin), (originalW * sin) + (originalH * cos)
-    local x4, y4 = -(originalH * sin), (originalH * cos)
+    local rotatedW = math.abs(baseW * cos) + math.abs(baseH * sin)
+    local rotatedH = math.abs(baseW * sin) + math.abs(baseH * cos)
 
-    local minX = math.min(x1, x2, x3, x4)
-    local maxX = math.max(x1, x2, x3, x4)
-    local minY = math.min(y1, y2, y3, y4)
-    local maxY = math.max(y1, y2, y3, y4)
+    local padW = math.ceil(rotatedW - baseW)
+    local padH = math.ceil(rotatedH - baseH)
 
-    local newW = maxX - minX
-    local newH = maxY - minY
+    if padW < 0 then padW = 0 end
+    if padH < 0 then padH = 0 end
 
-    local tx = -minX
-    local ty = -minY
+    local newPL = math.floor(padW / 2)
+    local newPR = padW - newPL
+    local newPT = math.floor(padH / 2)
+    local newPB = padH - newPT
+
+    local newPadString = string.format("%d,%d,%d,%d", newPL, newPT, newPR, newPB)
+
+    local totalW = baseW + newPL + newPR
+    local totalH = baseH + newPT + newPB
+
+    local cx = totalW / 2
+    local cy = totalH / 2
+
+    local tx = cx - (cx * cos) + (cy * sin)
+    local ty = cy - (cx * sin) - (cy * cos)
 
     local matrix = string.format("%f;%f;%f;%f;%f;%f", cos, sin, -sin, cos, tx, ty)
-
-    local padR = math.ceil(newW - originalW)
-    local padB = math.ceil(newH - originalH)
-    if padR < 0 then padR = 0 end
-    if padB < 0 then padB = 0 end
-
-    local newPadString = '0,0,' .. padR .. ',' .. padB
 
     local screenW = tonumber(SKIN:GetVariable('SCREENAREAWIDTH'))
     local screenH = tonumber(SKIN:GetVariable('SCREENAREAHEIGHT'))
     local workX = tonumber(SKIN:GetVariable('SCREENAREAX'))
     local workY = tonumber(SKIN:GetVariable('SCREENAREAY'))
 
-    local finalX = math.floor(workX + (screenW * targetPctX) - tx)
-    local finalY = math.floor(workY + (screenH * targetPctY) - ty)
+    local targetScreenX = workX + (screenW * targetPctX)
+    local targetScreenY = workY + (screenH * targetPctY)
+
+    local finalX = math.floor(targetScreenX - cx)
+    local finalY = math.floor(targetScreenY - cy)
 
     if matrix ~= lastMatrix then
         SKIN:Bang('!SetOption', MeterName, 'TransformationMatrix', matrix)
@@ -94,5 +97,5 @@ function Update()
         lastY = finalY
     end
 
-    return newW .. "x" .. newH
+    return totalW .. "x" .. totalH
 end

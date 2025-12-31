@@ -62,11 +62,9 @@ function Update()
             elseif line:find("^DTEND") then
                 currentEvent.dtend = ParseISODate(line:match(":(.*)"))
             elseif line:find("^SUMMARY") then
-                -- Unescape commas if present (replace \, with ,)
                 local summary = line:match("SUMMARY:(.*)")
                 currentEvent.summary = summary:gsub("\\,", ",")
             elseif line:find("^LOCATION") then
-                -- Grab the location and unescape commas
                 local loc = line:match("LOCATION:(.*)")
                 currentEvent.location = loc:gsub("\\,", ",")
             end
